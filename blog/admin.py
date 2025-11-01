@@ -3,21 +3,11 @@ from .models import Article, Comment
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    """Configuration de l'admin pour les articles"""
-    
-    # Champs affichés dans la liste
     list_display = ['title', 'author', 'status', 'published_at', 'created_at']
-    
-    # Filtres dans la sidebar
     list_filter = ['status', 'created_at', 'author']
-    
-    # Barre de recherche
     search_fields = ['title', 'content']
-    
-    # Pré-remplissage du slug basé sur le titre
     prepopulated_fields = {'slug': ('title',)}
     
-    # Organisation des champs dans le formulaire
     fieldsets = (
         ('Informations générales', {
             'fields': ('title', 'slug', 'author', 'image')
@@ -32,14 +22,27 @@ class ArticleAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    """Configuration de l'admin pour les commentaires"""
+    """Configuration améliorée pour la modération des commentaires"""
     
-    list_display = ['author', 'article', 'approved', 'created_at']
-    list_filter = ['approved', 'created_at']
-    search_fields = ['author__username', 'content']
-    actions = ['approve_comments']
+    list_display = ['author', 'article', 'content_preview', 'approved', 'created_at']
+    list_filter = ['approved', 'created_at', 'article']
+    search_fields = ['author__username', 'content', 'article__title']
+    list_editable = ['approved']  # Permet de modifier l'approbation directement dans la liste
+    actions = ['approve_comments', 'disapprove_comments']
+    
+    def content_preview(self, obj):
+        """Aperçu du contenu du commentaire"""
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Aperçu'
     
     def approve_comments(self, request, queryset):
         """Action pour approuver les commentaires sélectionnés"""
-        queryset.update(approved=True)
+        updated = queryset.update(approved=True)
+        self.message_user(request, f'{updated} commentaire(s) approuvé(s).')
     approve_comments.short_description = "Approuver les commentaires sélectionnés"
+    
+    def disapprove_comments(self, request, queryset):
+        """Action pour désapprouver les commentaires sélectionnés"""
+        updated = queryset.update(approved=False)
+        self.message_user(request, f'{updated} commentaire(s) désapprouvé(s).')
+    disapprove_comments.short_description = "Désapprouver les commentaires sélectionnés"

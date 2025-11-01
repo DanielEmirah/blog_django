@@ -30,7 +30,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'blog:home' %}">Mon Blog</a>
+            <a class="navbar-brand" href="{% url 'blog:home' %}">📝 Mon Blog</a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -39,35 +39,83 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'blog:home' %}">Accueil</a>
+                        <a class="nav-link" href="{% url 'blog:home' %}">🏠 Accueil</a>
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'blog:article_create' %}">Nouvel Article</a>
+                        <a class="nav-link" href="{% url 'blog:article_create' %}">📤 Nouvel Article</a>
                     </li>
                     {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            {{ user.username }}
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'admin:index' %}">Administration</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form method="post" action="{% url 'logout' %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item">Déconnexion</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
+                        {% if user.is_superuser %}
+                        <!-- Menu Administration pour superutilisateurs -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                                👑 Administration
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin:index' %}">
+                                        ⚙️ Panel Django Admin
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'blog:comment_moderation' %}">
+                                        🛡️ Modération Commentaires
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <span class="dropdown-item-text">
+                                        <small>Connecté en tant que <strong>{{ user.username }}</strong></small>
+                                    </span>
+                                </li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" class="d-inline w-100">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            🚪 Déconnexion
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <!-- Menu pour utilisateurs normaux -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                👤 {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <span class="dropdown-item-text">
+                                        <small>Connecté en tant que <strong>{{ user.username }}</strong></small>
+                                    </span>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'admin:index' %}">
+                                        ⚙️ Administration
+                                    </a>
+                                </li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}" class="d-inline w-100">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            🚪 Déconnexion
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                        {% endif %}
                     {% else %}
+                    <!-- Menu pour utilisateurs non connectés -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Connexion</a>
+                        <a class="nav-link" href="{% url 'login' %}">🔐 Connexion</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -80,6 +128,15 @@
         {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {% if message.tags == 'success' %}
+                    ✅ 
+                {% elif message.tags == 'error' %}
+                    ❌ 
+                {% elif message.tags == 'warning' %}
+                    ⚠️ 
+                {% elif message.tags == 'info' %}
+                    ℹ️ 
+                {% endif %}
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -90,13 +147,24 @@
     <!-- Contenu principal -->
     <main class="container my-4">
         {% block content %}
+        <!-- Le contenu spécifique à chaque page viendra ici -->
         {% endblock %}
     </main>
 
     <!-- Footer -->
     <footer class="bg-light text-center py-4 mt-5">
         <div class="container">
-            <p class="mb-0">&copy; 2025 Mon Blog Django. Tous droits réservés.</p>
+            <p class="mb-0">
+                &copy; 2024 Mon Blog Django. 
+                {% if user.is_authenticated %}
+                    Connecté en tant que <strong>{{ user.username }}</strong>
+                    {% if user.is_superuser %}
+                        <span class="badge bg-warning ms-1">Administrateur</span>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-decoration-none">Se connecter</a>
+                {% endif %}
+            </p>
         </div>
     </footer>
 

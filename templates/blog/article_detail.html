@@ -16,7 +16,8 @@
                 </span>
             </div>
             
-            {% if user == article.author or user.is_superuser %}
+            <!-- Vérification des permissions SANS template tags -->
+            {% if user.is_authenticated and user == article.author or user.is_superuser %}
             <div>
                 <a href="{% url 'blog:article_update' article.slug %}" class="btn btn-sm btn-outline-secondary">
                     ✏️ Modifier
@@ -39,22 +40,58 @@
     </div>
 
     <!-- Section commentaires -->
-    <section class="comments-section">
+    <section class="comments-section mt-5">
         <h3 class="mb-4">
-            Commentaires 
+            💬 Commentaires 
             <span class="badge bg-secondary">{{ comments.count }}</span>
+            {% if pending_count > 0 %}
+                <span class="badge bg-warning">
+                    {{ pending_count }} en attente
+                </span>
+            {% endif %}
         </h3>
 
         <!-- Liste des commentaires -->
         {% for comment in comments %}
-        <div class="comment mb-3 p-3 bg-light rounded">
+        <div class="comment mb-3 p-3 {% if comment.approved %}bg-light{% else %}bg-warning bg-opacity-25{% endif %} rounded">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <strong>{{ comment.author.username }}</strong>
                     <small class="text-muted"> - {{ comment.created_at|date:"d M Y H:i" }}</small>
+                    {% if not comment.approved %}
+                    <span class="badge bg-warning ms-2">En attente de modération</span>
+                    {% endif %}
                 </div>
-                {% if user == comment.author or user.is_superuser %}
-                <small class="text-muted">Votre commentaire</small>
+                {% if user.is_superuser %}
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown">
+                        ⚙️
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% if not comment.approved %}
+                        <li>
+                            <form method="post" action="{% url 'blog:comment_moderation' %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                <button type="submit" name="action" value="approve" class="dropdown-item">
+                                    ✅ Approuver
+                                </button>
+                            </form>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <form method="post" action="{% url 'blog:comment_moderation' %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                <button type="submit" name="action" value="delete" class="dropdown-item text-danger"
+                                        onclick="return confirm('Supprimer ce commentaire ?')">
+                                    🗑️ Supprimer
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
                 {% endif %}
             </div>
             <p class="mb-0 mt-2">{{ comment.content|linebreaks }}</p>

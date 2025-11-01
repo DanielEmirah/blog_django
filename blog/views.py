@@ -7,6 +7,8 @@ from django.utils import timezone
 from django.contrib import messages
 from .models import Article, Comment
 from .forms import CommentForm
+from django.contrib.auth.decorators import user_passes_test
+from django.core.paginator import Paginator
 
 class ArticleListView(ListView):
     """
@@ -27,28 +29,20 @@ class ArticleListView(ListView):
         ).order_by('-published_at')
 
 class ArticleDetailView(DetailView):
-    """
-    Vue pour afficher le détail d'un article
-    """
     model = Article
     template_name = 'blog/article_detail.html'
     context_object_name = 'article'
     
     def get_queryset(self):
-        """
-        Pour les non-superusers, ne montre que les articles publiés
-        """
         queryset = super().get_queryset()
         if not self.request.user.is_superuser:
             queryset = queryset.filter(status='published', published_at__lte=timezone.now())
         return queryset
     
     def get_context_data(self, **kwargs):
-        """
-        Ajoute le formulaire de commentaire au contexte
-        """
         context = super().get_context_data(**kwargs)
         context['comment_form'] = CommentForm()
+        # ⚠️ IMPORTANT : Ne récupérer que les commentaires approuvés
         context['comments'] = self.object.comments.filter(approved=True)
         return context
 
@@ -143,3 +137,51 @@ def add_comment(request, slug):
             comment.save()
     
     return redirect('blog:article_detail', slug=article.slug)
+
+def superuser_required(function=None):
+    """Décorateur pour restreindre l'accès aux superutilisateurs"""
+    actual_decorator = user_passes_test(
+        lambda u: u.is_active and u.is_superuser,
+    )
+    if function:
+        return actual_decorator(function)
+    return actual_decorator
+
+@login_required
+@superuser_required
+def comment_moderation(request):
+    """
+    Vue de modération des commentaires pour les superutilisateurs
+    """
+    if not request.user.is_superuser:
+        return redirect('blog:home')
+    
+    pending_comments = Comment.objects.filter(approved=False).order_by('-created_at')
+    approved_comments = Comment.objects.filter(approved=True).order_by('-created_at')[:10]
+    
+    if request.method == 'POST':
+        comment_id = request.POST.get('comment_id')
+        action = request.POST.get('action')
+        
+        try:
+            comment = Comment.objects.get(id=comment_id)
+            if action == 'approve':
+                comment.approved = True
+                comment.save()
+                messages.success(request, f'Commentaire de {comment.author} approuvé.')
+            elif action == 'delete':
+                comment.delete()
+                messages.success(request, f'Commentaire de {comment.author} supprimé.')
+        except Comment.DoesNotExist:
+            messages.error(request, 'Commentaire non trouvé.')
+        
+        # ⚠️ IMPORTANT : Recharger les données après modification
+        return redirect('blog:comment_moderation')
+    
+    context = {
+        'pending_comments': pending_comments,
+        'approved_comments': approved_comments,
+        'pending_count': pending_comments.count(),
+    }
+    
+    return render(request, 'blog/comment_moderation.html', context)

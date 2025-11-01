@@ -9,10 +9,12 @@ urlpatterns = [
     
     # Créer un nouvel article
     path('article/new/', views.ArticleCreateView.as_view(), name='article_create'),
-    
+
+    # ⚠️ NOUVEAU : Modération des commentaires
+    path('moderation/comments/', views.comment_moderation, name='comment_moderation'),
+
     # Détail d'un article
     path('article/<slug:slug>/', views.ArticleDetailView.as_view(), name='article_detail'),
-    
     
     # Modifier un article
     path('article/<slug:slug>/edit/', views.ArticleUpdateView.as_view(), name='article_update'),
