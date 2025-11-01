@@ -22,93 +22,66 @@
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     
-                    <!-- Affichage des erreurs générales -->
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {{ form.non_field_errors }}
-                    </div>
-                    {% endif %}
-                    
-                    <!-- Champs du formulaire -->
+                    <!-- Champs du formulaire avec styles Bootstrap -->
                     <div class="mb-3">
-                        <label for="{{ form.title.id_for_label }}" class="form-label">
-                            <strong>Titre *</strong>
-                        </label>
-                        {{ form.title }}
+                        <label for="id_title" class="form-label"><strong>Titre *</strong></label>
+                        <input type="text" name="title" id="id_title" class="form-control" 
+                               value="{{ form.title.value|default:'' }}" required maxlength="200">
                         {% if form.title.errors %}
-                        <div class="text-danger">
-                            {{ form.title.errors }}
-                        </div>
+                        <div class="text-danger">{{ form.title.errors }}</div>
                         {% endif %}
                     </div>
                     
                     <div class="mb-3">
-                        <label for="{{ form.slug.id_for_label }}" class="form-label">
-                            <strong>Slug *</strong>
-                        </label>
-                        {{ form.slug }}
-                        <div class="form-text">
-                            Version URL-friendly du titre (lettres minuscules, tirets)
-                        </div>
+                        <label for="id_slug" class="form-label"><strong>Slug *</strong></label>
+                        <input type="text" name="slug" id="id_slug" class="form-control" 
+                               value="{{ form.slug.value|default:'' }}" required maxlength="200">
+                        <div class="form-text">Version URL-friendly du titre (lettres minuscules, tirets)</div>
                         {% if form.slug.errors %}
-                        <div class="text-danger">
-                            {{ form.slug.errors }}
-                        </div>
+                        <div class="text-danger">{{ form.slug.errors }}</div>
                         {% endif %}
                     </div>
                     
                     <div class="mb-3">
-                        <label for="{{ form.content.id_for_label }}" class="form-label">
-                            <strong>Contenu *</strong>
-                        </label>
-                        {{ form.content }}
+                        <label for="id_content" class="form-label"><strong>Contenu *</strong></label>
+                        <textarea name="content" id="id_content" class="form-control" 
+                                  rows="10" required>{{ form.content.value|default:'' }}</textarea>
                         {% if form.content.errors %}
-                        <div class="text-danger">
-                            {{ form.content.errors }}
-                        </div>
+                        <div class="text-danger">{{ form.content.errors }}</div>
                         {% endif %}
                     </div>
                     
                     <div class="mb-3">
-                        <label for="{{ form.image.id_for_label }}" class="form-label">
-                            <strong>Image de couverture</strong>
-                        </label>
-                        {{ form.image }}
+                        <label for="id_image" class="form-label"><strong>Image de couverture</strong></label>
+                        <input type="file" name="image" id="id_image" class="form-control" 
+                               accept="image/*">
                         {% if form.image.errors %}
-                        <div class="text-danger">
-                            {{ form.image.errors }}
-                        </div>
+                        <div class="text-danger">{{ form.image.errors }}</div>
                         {% endif %}
                     </div>
                     
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.status.id_for_label }}" class="form-label">
-                                    <strong>Statut</strong>
-                                </label>
-                                {{ form.status }}
+                                <label for="id_status" class="form-label"><strong>Statut</strong></label>
+                                <select name="status" id="id_status" class="form-select">
+                                    <option value="draft" {% if form.status.value == 'draft' %}selected{% endif %}>Brouillon</option>
+                                    <option value="published" {% if form.status.value == 'published' %}selected{% endif %}>Publié</option>
+                                </select>
                                 {% if form.status.errors %}
-                                <div class="text-danger">
-                                    {{ form.status.errors }}
-                                </div>
+                                <div class="text-danger">{{ form.status.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
                         
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="{{ form.published_at.id_for_label }}" class="form-label">
-                                    <strong>Date de publication</strong>
-                                </label>
-                                {{ form.published_at }}
-                                <div class="form-text">
-                                    Planifier une publication future
-                                </div>
+                                <label for="id_published_at" class="form-label"><strong>Date de publication</strong></label>
+                                <input type="datetime-local" name="published_at" id="id_published_at" 
+                                       class="form-control" value="{{ form.published_at.value|default:'' }}">
+                                <div class="form-text">Planifier une publication future</div>
                                 {% if form.published_at.errors %}
-                                <div class="text-danger">
-                                    {{ form.published_at.errors }}
-                                </div>
+                                <div class="text-danger">{{ form.published_at.errors }}</div>
                                 {% endif %}
                             </div>
                         </div>
@@ -142,24 +115,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const titleField = document.getElementById('id_title');
     const slugField = document.getElementById('id_slug');
     
-    if (titleField && slugField) {
+    if (titleField && slugField && !slugField.value) {
         titleField.addEventListener('blur', function() {
             if (!slugField.value) {
                 const slug = titleField.value
                     .toLowerCase()
                     .replace(/[^a-z0-9 -]/g, '')
                     .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-');
+                    .replace(/-+/g, '-')
+                    .replace(/^-+/, '')
+                    .replace(/-+$/, '');
                 slugField.value = slug;
             }
         });
     }
-    
-    // Amélioration des champs de formulaire
-    const formControls = document.querySelectorAll('input, textarea, select');
-    formControls.forEach(control => {
-        control.classList.add('form-control');
-    });
 });
 </script>
 {% endblock %}

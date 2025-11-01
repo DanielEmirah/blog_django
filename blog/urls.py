@@ -7,11 +7,12 @@ urlpatterns = [
     # Page d'accueil - liste des articles
     path('', views.ArticleListView.as_view(), name='home'),
     
+    # Créer un nouvel article
+    path('article/new/', views.ArticleCreateView.as_view(), name='article_create'),
+    
     # Détail d'un article
     path('article/<slug:slug>/', views.ArticleDetailView.as_view(), name='article_detail'),
     
-    # Créer un nouvel article
-    path('article/new/', views.ArticleCreateView.as_view(), name='article_create'),
     
     # Modifier un article
     path('article/<slug:slug>/edit/', views.ArticleUpdateView.as_view(), name='article_update'),

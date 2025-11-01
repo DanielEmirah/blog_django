@@ -4,24 +4,23 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.contrib import messages
 from .models import Article, Comment
 from .forms import CommentForm
 
 class ArticleListView(ListView):
     """
     Vue pour afficher la liste des articles publiés
-    Hérite de ListView qui gère automatiquement l'affichage d'une liste d'objets
     """
     model = Article
-    template_name = 'blog/home.html'  # Template utilisé
-    context_object_name = 'articles'  # Nom de la variable dans le template
-    paginate_by = 5  # Nombre d'articles par page
+    template_name = 'blog/home.html'
+    context_object_name = 'articles'
+    paginate_by = 5
     
     def get_queryset(self):
         """
-        Surcharge la requête pour ne récupérer que les articles publiés
+        Ne récupère que les articles publiés
         """
-        # Filtre les articles avec statut 'published' et date <= maintenant
         return Article.objects.filter(
             status='published', 
             published_at__lte=timezone.now()
@@ -56,7 +55,6 @@ class ArticleDetailView(DetailView):
 class ArticleCreateView(LoginRequiredMixin, CreateView):
     """
     Vue pour créer un nouvel article
-    LoginRequiredMixin : redirige vers la page de login si non connecté
     """
     model = Article
     template_name = 'blog/article_form.html'
@@ -64,16 +62,22 @@ class ArticleCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         """
-        Surchargée pour définir automatiquement l'auteur
+        Définit l'auteur et sauvegarde l'article
         """
-        # Définit l'auteur comme l'utilisateur connecté
         form.instance.author = self.request.user
-        return super().form_valid(form)
+        
+        # Sauvegarde l'article
+        self.object = form.save()
+        
+        # Message de succès
+        messages.success(self.request, '✅ Votre article a été créé avec succès !')
+        
+        # Redirection vers le détail du nouvel article
+        return redirect('blog:article_detail', slug=self.object.slug)
 
 class ArticleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """
     Vue pour modifier un article
-    UserPassesTestMixin : vérifie que l'utilisateur peut modifier l'article
     """
     model = Article
     template_name = 'blog/article_form.html'
@@ -81,10 +85,17 @@ class ArticleUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     
     def test_func(self):
         """
-        Vérifie que l'utilisateur est l'auteur de l'article ou un superuser
+        Vérifie que l'utilisateur est l'auteur ou un superuser
         """
         article = self.get_object()
         return self.request.user == article.author or self.request.user.is_superuser
+    
+    def form_valid(self, form):
+        """
+        Message de succès après modification
+        """
+        messages.success(self.request, '✅ Votre article a été modifié avec succès !')
+        return super().form_valid(form)
 
 class ArticleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """
@@ -92,7 +103,7 @@ class ArticleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """
     model = Article
     template_name = 'blog/article_confirm_delete.html'
-    success_url = reverse_lazy('home')  # Redirection après suppression
+    success_url = reverse_lazy('blog:home')
     
     def test_func(self):
         """
@@ -100,24 +111,35 @@ class ArticleDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         """
         article = self.get_object()
         return self.request.user == article.author or self.request.user.is_superuser
+    
+    def delete(self, request, *args, **kwargs):
+        """
+        Message de succès après suppression
+        """
+        messages.success(request, '✅ Votre article a été supprimé avec succès !')
+        return super().delete(request, *args, **kwargs)
 
 @login_required
 def add_comment(request, slug):
     """
-    Vue pour ajouter un commentaire (vue fonction)
+    Vue pour ajouter un commentaire
     """
     article = get_object_or_404(Article, slug=slug)
     
     if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
-            # Crée le commentaire sans l'enregistrer
             comment = form.save(commit=False)
             comment.article = article
             comment.author = request.user
+            
             # Si l'utilisateur est superuser, approuve automatiquement
             if request.user.is_superuser:
                 comment.approved = True
+                messages.success(request, '✅ Votre commentaire a été publié !')
+            else:
+                messages.success(request, '✅ Votre commentaire est en attente de modération.')
+            
             comment.save()
     
-    return redirect('article_detail', slug=article.slug)
+    return redirect('blog:article_detail', slug=article.slug)

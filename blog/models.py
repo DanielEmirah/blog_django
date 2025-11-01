@@ -59,7 +59,7 @@ class Article(models.Model):
     
     def get_absolute_url(self):
         """URL absolue pour accéder au détail de l'article"""
-        return reverse('article_detail', kwargs={'slug': self.slug})
+        return reverse('blog:article_detail', kwargs={'slug': self.slug})
     
     def is_published(self):
         """Vérifie si l'article est publié"""
