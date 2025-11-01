@@ -7,7 +7,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # URLs de l'application blog
-    path('', include('blog.urls')),
+    path('', include('blog.urls', namespace='blog')),
     
     # URLs d'authentification (fournies par Django)
     path('accounts/', include('django.contrib.auth.urls')),

@@ -57,7 +57,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Dossier templates global
+        'DIRS': [BASE_DIR, 'templates'], # Dossier templates global
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -124,8 +124,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Login/Logout URLs
-LOGIN_REDIRECT_URL = 'home'        # Après connexion, redirige vers la page d'accueil
-LOGOUT_REDIRECT_URL = 'home'       # Après déconnexion, redirige vers la page d'accueil
+LOGIN_REDIRECT_URL = 'blog:home'    # Avec le namespace 'blog'
+LOGOUT_REDIRECT_URL = 'blog:home'   # Avec le namespace 'blog'
+LOGIN_URL = 'login'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

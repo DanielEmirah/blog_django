@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Connexion - Mon Blog{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title text-center">🔐 Connexion</h2>
+            </div>
+            
+            <div class="card-body">
+                <!-- Affichage des erreurs -->
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Erreur :</strong> Nom d'utilisateur ou mot de passe incorrect.
+                </div>
+                {% endif %}
+                
+                {% if next %}
+                    {% if user.is_authenticated %}
+                    <div class="alert alert-warning">
+                        Votre compte n'a pas accès à cette page.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Veuillez vous connecter pour accéder à cette page.
+                    </div>
+                    {% endif %}
+                {% endif %}
+                
+                <!-- Formulaire de connexion -->
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <strong>Nom d'utilisateur</strong>
+                        </label>
+                        <input type="text" 
+                               name="username" 
+                               id="id_username" 
+                               class="form-control" 
+                               required 
+                               autofocus>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">
+                            <strong>Mot de passe</strong>
+                        </label>
+                        <input type="password" 
+                               name="password" 
+                               id="id_password" 
+                               class="form-control" 
+                               required>
+                    </div>
+                    
+                    <input type="hidden" name="next" value="{{ next }}">
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            🚀 Se connecter
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Liens utiles -->
+                <div class="mt-4 text-center">
+                    <p class="mb-2">
+                        <a href="{% url 'blog:home' %}" class="text-decoration-none">
+                            ← Retour à l'accueil
+                        </a>
+                    </p>
+                    <small class="text-muted">
+                        Pas de compte ? 
+                        <a href="{% url 'admin:index' %}" class="text-decoration-none">
+                            Créez-en un via l'admin
+                        </a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
