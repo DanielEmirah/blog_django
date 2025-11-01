@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ article.title }} - Mon Blog{% endblock %}
+
+{% block content %}
+<article>
+    <!-- En-tête de l'article -->
+    <div class="mb-4">
+        <h1 class="display-4">{{ article.title }}</h1>
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <span class="text-muted">
+                    Par <strong>{{ article.author.username }}</strong> | 
+                    {{ article.published_at|date:"d F Y à H:i" }}
+                </span>
+            </div>
+            
+            {% if user == article.author or user.is_superuser %}
+            <div>
+                <a href="{% url 'blog:article_update' article.slug %}" class="btn btn-sm btn-outline-secondary">
+                    ✏️ Modifier
+                </a>
+                <a href="{% url 'blog:article_delete' article.slug %}" class="btn btn-sm btn-outline-danger">
+                    🗑️ Supprimer
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if article.image %}
+        <img src="{{ article.image.url }}" alt="{{ article.title }}" class="img-fluid rounded mb-4" style="max-height: 400px; width: 100%; object-fit: cover;">
+        {% endif %}
+    </div>
+
+    <!-- Contenu de l'article -->
+    <div class="article-content mb-5">
+        {{ article.content|linebreaks }}
+    </div>
+
+    <!-- Section commentaires -->
+    <section class="comments-section">
+        <h3 class="mb-4">
+            Commentaires 
+            <span class="badge bg-secondary">{{ comments.count }}</span>
+        </h3>
+
+        <!-- Liste des commentaires -->
+        {% for comment in comments %}
+        <div class="comment mb-3 p-3 bg-light rounded">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{{ comment.author.username }}</strong>
+                    <small class="text-muted"> - {{ comment.created_at|date:"d M Y H:i" }}</small>
+                </div>
+                {% if user == comment.author or user.is_superuser %}
+                <small class="text-muted">Votre commentaire</small>
+                {% endif %}
+            </div>
+            <p class="mb-0 mt-2">{{ comment.content|linebreaks }}</p>
+        </div>
+        {% empty %}
+        <div class="alert alert-info">
+            Aucun commentaire pour le moment. Soyez le premier à commenter !
+        </div>
+        {% endfor %}
+
+        <!-- Formulaire de commentaire -->
+        {% if user.is_authenticated %}
+        <div class="comment-form mt-5">
+            <h4 class="mb-3">Ajouter un commentaire</h4>
+            <form method="post" action="{% url 'blog:add_comment' article.slug %}">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    {{ comment_form.content }}
+                    {% if comment_form.content.errors %}
+                    <div class="text-danger">
+                        {{ comment_form.content.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    📤 Publier le commentaire
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <a href="{% url 'login' %}" class="alert-link">Connectez-vous</a> pour laisser un commentaire.
+        </div>
+        {% endif %}
+    </section>
+</article>
+
+<!-- Lien de retour -->
+<div class="mt-4">
+    <a href="{% url 'blog:home' %}" class="btn btn-outline-secondary">
+        ← Retour à l'accueil
+    </a>
+</div>
+{% endblock %}
